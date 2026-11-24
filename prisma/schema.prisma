@@ -77,6 +77,21 @@ enum LedgerEntryType {
   CREDIT
 }
 
+enum VoiceInputMode {
+  VOICE
+  TEXT
+}
+
+enum VoiceCommandStatus {
+  RECEIVED
+  INTERPRETING
+  NEEDS_CLARIFICATION
+  AWAITING_CONFIRMATION
+  EXECUTED
+  CANCELLED
+  FAILED
+}
+
 // ============================================================================
 // CORE ENTITIES
 // ============================================================================
@@ -111,6 +126,7 @@ model Business {
   stockMovements StockMovement[]
   payments       Payment[]
   ledgerEntries  LedgerEntry[]
+  voiceCommands  VoiceCommand[]
 
   @@index([ownerId])
 }
@@ -249,6 +265,7 @@ model Transaction {
   items             TransactionItem[]
   payments          Payment[]
   ledgerEntries     LedgerEntry[]
+  voiceCommands     VoiceCommand[] @relation("VoiceCommandTransaction")
 
   @@index([businessId, createdAt])
   @@index([businessId, transactionDate])
@@ -325,4 +342,27 @@ model LedgerEntry {
   @@index([businessId, customerId, createdAt])
   @@index([businessId, supplierId, createdAt])
   @@index([transactionId])
+}
+
+model VoiceCommand {
+  id                   String             @id @default(cuid())
+  businessId           String
+  inputMode            VoiceInputMode     @default(VOICE)
+  selectedLanguage     PreferredLanguage  @default(HINGLISH)
+  transcript           String
+  interpretedIntent    String?
+  extractedEntities    Json?
+  commandStatus        VoiceCommandStatus @default(RECEIVED)
+  resultSummary        String?
+  failureReason        String?
+  idempotencyKey       String             @unique
+  relatedTransactionId String?
+  createdAt            DateTime           @default(now())
+  executedAt           DateTime?
+
+  business           Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  relatedTransaction Transaction? @relation("VoiceCommandTransaction", fields: [relatedTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, createdAt])
+  @@index([businessId, commandStatus])
 }

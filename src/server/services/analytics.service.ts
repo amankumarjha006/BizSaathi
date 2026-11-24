@@ -204,4 +204,111 @@ export const analyticsService = {
       purchases: totals.purchases,
     }));
   },
+
+  async getSalesSummaryForPeriod(
+    businessId: string,
+    period: "TODAY" | "YESTERDAY" | "THIS_WEEK" | "THIS_MONTH" = "TODAY",
+    timeZone = "Asia/Kolkata",
+    db?: PrismaClient
+  ) {
+    const prisma = db ?? requirePrisma();
+
+    // Compute calendar date parts in business timezone (default Asia/Kolkata)
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayIso = formatter.format(now); // YYYY-MM-DD
+    const [y, m, d] = todayIso.split("-").map(Number);
+
+    // Build IST-anchored UTC boundaries (Asia/Kolkata is UTC+05:30)
+    const offsetMs = 5.5 * 60 * 60 * 1000;
+    const utcMidnight = Date.UTC(y, m - 1, d) - offsetMs;
+
+    let startDate = new Date(utcMidnight);
+    let endDate = new Date(utcMidnight + 24 * 60 * 60 * 1000 - 1);
+
+    if (period === "YESTERDAY") {
+      startDate = new Date(utcMidnight - 24 * 60 * 60 * 1000);
+      endDate = new Date(utcMidnight - 1);
+    } else if (period === "THIS_WEEK") {
+      startDate = new Date(utcMidnight - 6 * 24 * 60 * 60 * 1000);
+    } else if (period === "THIS_MONTH") {
+      startDate = new Date(Date.UTC(y, m - 1, 1) - offsetMs);
+    }
+
+    const sales = await prisma.transaction.findMany({
+      where: {
+        businessId,
+        transactionType: "SALE",
+        status: "CONFIRMED",
+        transactionDate: { gte: startDate, lte: endDate },
+      },
+      select: { totalAmount: true, paidAmount: true },
+    });
+
+    const totalSales = decimalToNumber(
+      roundMoney(sumDecimals(sales.map((s) => s.totalAmount)))
+    );
+    const totalCollected = decimalToNumber(
+      roundMoney(sumDecimals(sales.map((s) => s.paidAmount)))
+    );
+    const totalCredit = Math.max(
+      0,
+      Number((totalSales - totalCollected).toFixed(2))
+    );
+
+    return {
+      period,
+      timeZone,
+      transactionCount: sales.length,
+      totalSales,
+      totalCollected,
+      totalCredit,
+    };
+  },
+
+  async getTopSellingProducts(
+    businessId: string,
+    days = 7,
+    limit = 5,
+    db?: PrismaClient
+  ) {
+    const prisma = db ?? requirePrisma();
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+
+    const sales = await prisma.transaction.findMany({
+      where: {
+        businessId,
+        transactionType: "SALE",
+        status: "CONFIRMED",
+        transactionDate: { gte: start },
+      },
+      include: { items: true },
+    });
+
+    const totals = new Map<string, { name: string; quantity: number; revenue: number }>();
+    for (const sale of sales) {
+      for (const item of sale.items) {
+        const key = item.productId ?? item.productNameSnapshot;
+        const cur = totals.get(key) ?? {
+          name: item.productNameSnapshot,
+          quantity: 0,
+          revenue: 0,
+        };
+        cur.quantity = Number((cur.quantity + decimalToNumber(item.quantity)).toFixed(3));
+        cur.revenue = Number((cur.revenue + decimalToNumber(item.totalPrice)).toFixed(2));
+        totals.set(key, cur);
+      }
+    }
+
+    return Array.from(totals.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, limit);
+  },
 };

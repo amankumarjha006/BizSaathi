@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ChevronDown, Globe, Menu, Store, User } from "lucide-react";
+import Link from "next/link";
+import { Bell, ChevronDown, Globe, Menu, Mic, Store, User } from "lucide-react";
 import { LANGUAGE_OPTIONS, type LanguageCode } from "@/constants/navigation";
 
 interface TopbarProps {
@@ -47,8 +48,17 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
           </div>
         </div>
 
-        {/* Right: Language selector, notifications, user profile */}
+        {/* Right: Voice action, Language selector, notifications, user profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/voice"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#F0B03B] px-3 py-1.5 text-xs font-bold text-[#353535] shadow-sm transition-colors hover:bg-[#DDA02D]"
+            aria-label="Open Voice Assistant"
+          >
+            <Mic className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden md:inline">Voice Saathi</span>
+          </Link>
+
           {/* Language selector */}
           <div className="flex items-center gap-1.5 rounded-xl border border-[#D5CFC4] bg-[#E3DFD6]/40 px-2.5 py-1.5">
             <Globe className="h-4 w-4 text-[#756F69]" aria-hidden="true" />
