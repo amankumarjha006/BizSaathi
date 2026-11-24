@@ -145,6 +145,7 @@ export default function TransactionsPage() {
             <option value="ALL">All Types</option>
             <option value="SALE">Sales</option>
             <option value="PURCHASE">Purchases</option>
+            <option value="CUSTOMER_ORDER">Customer Orders</option>
             <option value="EXPENSE">Expenses</option>
             <option value="RETURN">Returns</option>
           </select>

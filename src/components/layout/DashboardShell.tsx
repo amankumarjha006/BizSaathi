@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
@@ -9,10 +9,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-[#E3DFD6] text-[#353535]">
-      <Sidebar
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+      <Suspense fallback={<aside className="hidden w-72 shrink-0 bg-[#353535] lg:block" />}>
+        <Sidebar
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
+      </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

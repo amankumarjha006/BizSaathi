@@ -33,6 +33,7 @@ enum ProcessingStatus {
   REVIEW_REQUIRED
   CONFIRMED
   FAILED
+  DUPLICATE
 }
 
 enum TransactionType {
@@ -165,6 +166,7 @@ model Customer {
   business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   transactions  Transaction[]
   ledgerEntries LedgerEntry[]
+  documents     Document[]
 
   @@index([businessId, name])
   @@index([businessId, phone])
@@ -181,28 +183,45 @@ model Supplier {
   business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   transactions  Transaction[]
   ledgerEntries LedgerEntry[]
+  documents     Document[]
 
   @@index([businessId, name])
   @@index([businessId, phone])
 }
 
 model Document {
-  id               String           @id @default(cuid())
-  businessId       String
-  documentType     DocumentType
-  fileName         String
-  mimeType         String
-  storageKey       String
-  processingStatus ProcessingStatus @default(UPLOADED)
-  extractedData    Json?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                     String           @id @default(cuid())
+  businessId             String
+  documentType           DocumentType
+  fileName               String
+  mimeType               String
+  fileSize               Int              @default(0)
+  checksum               String           @default("")
+  storageKey             String
+  processingStatus       ProcessingStatus @default(UPLOADED)
+  extractedData          Json?
+  extractionWarnings     Json?
+  failureReason          String?
+  extractionVersion      String           @default("1.0")
+  supplierId             String?
+  customerId             String?
+  confirmedTransactionId String?          @unique
+  uploadedAt             DateTime         @default(now())
+  processedAt            DateTime?
+  confirmedAt            DateTime?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  business             Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplier             Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  customer             Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  confirmedTransaction Transaction?  @relation("ConfirmedDocumentTransaction", fields: [confirmedTransactionId], references: [id], onDelete: SetNull)
+  transactions         Transaction[] @relation("DocumentSourceTransactions")
 
   @@index([businessId, processingStatus])
   @@index([businessId, documentType])
+  @@index([businessId, checksum])
+  @@index([businessId, uploadedAt])
 }
 
 model Transaction {
@@ -222,13 +241,14 @@ model Transaction {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  business      Business          @relation(fields: [businessId], references: [id], onDelete: Restrict)
-  customer      Customer?         @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  supplier      Supplier?         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  document      Document?         @relation(fields: [documentId], references: [id], onDelete: SetNull)
-  items         TransactionItem[]
-  payments      Payment[]
-  ledgerEntries LedgerEntry[]
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  supplier          Supplier?         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  document          Document?         @relation("DocumentSourceTransactions", fields: [documentId], references: [id], onDelete: SetNull)
+  confirmedDocument Document?         @relation("ConfirmedDocumentTransaction")
+  items             TransactionItem[]
+  payments          Payment[]
+  ledgerEntries     LedgerEntry[]
 
   @@index([businessId, createdAt])
   @@index([businessId, transactionDate])

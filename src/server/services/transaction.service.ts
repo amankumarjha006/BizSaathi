@@ -14,7 +14,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "@/server/utils/errors";
-import { addStockTx, removeStockTx } from "./inventory.service";
+import { addStockTx, removeStockTx, type TxClient } from "./inventory.service";
 import { ledgerService } from "./ledger.service";
 import type {
   CreatePurchaseInput,
@@ -84,10 +84,49 @@ function computePaymentStatus(
   return "UNPAID";
 }
 
-function generateReference(prefix: "BILL" | "PUR"): string {
+function generateReference(prefix: "BILL" | "PUR" | "ORD" | "EXP"): string {
   const stamp = Date.now().toString().slice(-6);
   const rand = Math.floor(100 + Math.random() * 900);
   return `${prefix}-${stamp}${rand}`;
+}
+
+export interface PurchaseTxInput extends CreatePurchaseInput {
+  documentId?: string;
+  discountAmount?: number;
+  taxAmount?: number;
+}
+
+export interface SaleTxInput extends CreateSaleInput {
+  documentId?: string;
+  referenceNumber?: string;
+  discountAmount?: number;
+  taxAmount?: number;
+}
+
+export interface CustomerOrderTxInput {
+  customerId?: string;
+  documentId?: string;
+  referenceNumber?: string;
+  transactionDate?: Date;
+  items: Array<{
+    productId?: string | null;
+    productNameSnapshot: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  notes?: string;
+}
+
+export interface ExpenseTxInput {
+  documentId?: string;
+  referenceNumber?: string;
+  transactionDate?: Date;
+  description: string;
+  category?: string | null;
+  totalAmount: number;
+  paidAmount: number;
+  paymentMethod: "CASH" | "UPI" | "BANK_TRANSFER" | "OTHER";
+  notes?: string;
 }
 
 export function serializeTransaction(tx: {
@@ -168,6 +207,140 @@ export function serializeTransaction(tx: {
 }
 
 export const transactionService = {
+  async recordPurchaseTx(
+    tx: TxClient,
+    businessId: string,
+    input: PurchaseTxInput
+  ): Promise<SerializedTransaction> {
+    const supplier = await tx.supplier.findFirst({
+      where: { id: input.supplierId, businessId },
+      select: { id: true, name: true },
+    });
+    if (!supplier) {
+      throw new NotFoundError("Supplier not found for this business.");
+    }
+
+    const productIds = [...new Set(input.items.map((i) => i.productId))];
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds }, businessId },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const preparedItems = input.items.map((item) => {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        throw new NotFoundError(
+          `Product (${item.productId}) not found for this business.`
+        );
+      }
+      const qty = roundStock(item.quantity);
+      const unitPrice = roundMoney(item.unitPrice);
+      const totalPrice = roundMoney(mulDecimals(qty, unitPrice));
+      return {
+        productId: product.id,
+        productNameSnapshot: product.name,
+        quantity: qty,
+        unitPrice,
+        totalPrice,
+      };
+    });
+
+    const itemsSubtotal = roundMoney(
+      sumDecimals(preparedItems.map((i) => i.totalPrice))
+    );
+    const discountDec = roundMoney(input.discountAmount ?? 0);
+    const taxDec = roundMoney(input.taxAmount ?? 0);
+    const totalAmount = roundMoney(
+      addDecimals(subDecimals(itemsSubtotal, discountDec), taxDec)
+    );
+    if (totalAmount.lt(0)) {
+      throw new ValidationError("Purchase total cannot be negative.");
+    }
+
+    const paidAmount = roundMoney(input.paidAmount);
+
+    if (paidAmount.gt(totalAmount)) {
+      throw new ValidationError(
+        `Paid amount (₹${paidAmount.toString()}) cannot exceed total purchase amount (₹${totalAmount.toString()}).`
+      );
+    }
+
+    const paymentStatus = computePaymentStatus(totalAmount, paidAmount);
+    const referenceNumber = input.referenceNumber ?? generateReference("PUR");
+
+    const created = await tx.transaction.create({
+      data: {
+        businessId,
+        transactionType: "PURCHASE",
+        referenceNumber,
+        transactionDate: input.transactionDate ?? new Date(),
+        supplierId: supplier.id,
+        documentId: input.documentId ?? null,
+        totalAmount,
+        paidAmount,
+        paymentStatus,
+        status: "CONFIRMED",
+        notes: input.notes ?? null,
+        items: {
+          create: preparedItems,
+        },
+      },
+    });
+
+    for (const item of preparedItems) {
+      await addStockTx(tx, {
+        businessId,
+        productId: item.productId,
+        quantity: item.quantity,
+        movementType: "PURCHASE_IN",
+        referenceId: created.id,
+        notes: `Purchase ${referenceNumber}`,
+      });
+    }
+
+    if (paidAmount.gt(0)) {
+      await tx.payment.create({
+        data: {
+          businessId,
+          transactionId: created.id,
+          amount: paidAmount,
+          paymentMethod: input.paymentMethod,
+          notes: `Initial payment for ${referenceNumber}`,
+        },
+      });
+    }
+
+    await ledgerService.recordSupplierCreditTx(tx, {
+      businessId,
+      supplierId: supplier.id,
+      transactionId: created.id,
+      amount: totalAmount,
+      notes: `Purchase ${referenceNumber}`,
+    });
+
+    if (paidAmount.gt(0)) {
+      await ledgerService.recordSupplierDebitTx(tx, {
+        businessId,
+        supplierId: supplier.id,
+        transactionId: created.id,
+        amount: paidAmount,
+        notes: `Payment on purchase ${referenceNumber}`,
+      });
+    }
+
+    const full = await tx.transaction.findUniqueOrThrow({
+      where: { id: created.id },
+      include: {
+        supplier: { select: { name: true } },
+        customer: { select: { name: true } },
+        items: true,
+        payments: { orderBy: { createdAt: "desc" } },
+      },
+    });
+
+    return serializeTransaction(full);
+  },
+
   /**
    * Central Purchase Engine:
    * Validates supplier & products, computes totals on the backend using Prisma.Decimal,
@@ -176,134 +349,160 @@ export const transactionService = {
    */
   async recordPurchase(
     businessId: string,
-    input: CreatePurchaseInput,
+    input: PurchaseTxInput,
     db?: PrismaClient
   ): Promise<SerializedTransaction> {
     const prisma = db ?? requirePrisma();
+    return prisma.$transaction((tx) =>
+      transactionService.recordPurchaseTx(tx, businessId, input)
+    );
+  },
 
-    return prisma.$transaction(async (tx) => {
-      const supplier = await tx.supplier.findFirst({
-        where: { id: input.supplierId, businessId },
+  async recordSaleTx(
+    tx: TxClient,
+    businessId: string,
+    input: SaleTxInput
+  ): Promise<SerializedTransaction> {
+    let customer: { id: string; name: string } | null = null;
+    if (input.customerId) {
+      customer = await tx.customer.findFirst({
+        where: { id: input.customerId, businessId },
         select: { id: true, name: true },
       });
-      if (!supplier) {
-        throw new NotFoundError("Supplier not found for this business.");
+      if (!customer) {
+        throw new NotFoundError("Customer not found for this business.");
       }
+    }
 
-      const productIds = [...new Set(input.items.map((i) => i.productId))];
-      const products = await tx.product.findMany({
-        where: { id: { in: productIds }, businessId },
-      });
-      const productMap = new Map(products.map((p) => [p.id, p]));
+    const productIds = [...new Set(input.items.map((i) => i.productId))];
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds }, businessId, isActive: true },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
-      const preparedItems = input.items.map((item) => {
-        const product = productMap.get(item.productId);
-        if (!product) {
-          throw new NotFoundError(
-            `Product (${item.productId}) not found for this business.`
-          );
-        }
-        const qty = roundStock(item.quantity);
-        const unitPrice = roundMoney(item.unitPrice);
-        const totalPrice = roundMoney(mulDecimals(qty, unitPrice));
-        return {
-          productId: product.id,
-          productNameSnapshot: product.name,
-          quantity: qty,
-          unitPrice,
-          totalPrice,
-        };
-      });
-
-      const totalAmount = roundMoney(
-        sumDecimals(preparedItems.map((i) => i.totalPrice))
-      );
-      const paidAmount = roundMoney(input.paidAmount);
-
-      if (paidAmount.gt(totalAmount)) {
-        throw new ValidationError(
-          `Paid amount (₹${paidAmount.toString()}) cannot exceed total purchase amount (₹${totalAmount.toString()}).`
+    const preparedItems = input.items.map((item) => {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        throw new NotFoundError(
+          `Active product (${item.productId}) not found for this business.`
         );
       }
+      const qty = roundStock(item.quantity);
+      const unitPrice = roundMoney(
+        item.unitPrice !== undefined ? item.unitPrice : product.sellingPrice
+      );
+      const totalPrice = roundMoney(mulDecimals(qty, unitPrice));
+      return {
+        productId: product.id,
+        productNameSnapshot: product.name,
+        quantity: qty,
+        unitPrice,
+        totalPrice,
+      };
+    });
 
-      const paymentStatus = computePaymentStatus(totalAmount, paidAmount);
-      const referenceNumber = input.referenceNumber ?? generateReference("PUR");
+    const itemsSubtotal = roundMoney(
+      sumDecimals(preparedItems.map((i) => i.totalPrice))
+    );
+    const discountDec = roundMoney(input.discountAmount ?? 0);
+    const taxDec = roundMoney(input.taxAmount ?? 0);
+    const totalAmount = roundMoney(
+      addDecimals(subDecimals(itemsSubtotal, discountDec), taxDec)
+    );
+    if (totalAmount.lt(0)) {
+      throw new ValidationError("Sale total cannot be negative.");
+    }
 
-      const created = await tx.transaction.create({
+    const paidAmount = roundMoney(input.paidAmount);
+
+    if (paidAmount.gt(totalAmount)) {
+      throw new ValidationError(
+        `Paid amount (₹${paidAmount.toString()}) cannot exceed bill total (₹${totalAmount.toString()}).`
+      );
+    }
+
+    if (!customer && paidAmount.lt(totalAmount)) {
+      throw new ValidationError(
+        "Walk-in sales must be paid in full. Select a customer to record credit (Udhaar)."
+      );
+    }
+
+    const paymentStatus = computePaymentStatus(totalAmount, paidAmount);
+    const referenceNumber = input.referenceNumber ?? generateReference("BILL");
+
+    const created = await tx.transaction.create({
+      data: {
+        businessId,
+        transactionType: "SALE",
+        referenceNumber,
+        transactionDate: input.transactionDate ?? new Date(),
+        customerId: customer?.id ?? null,
+        documentId: input.documentId ?? null,
+        totalAmount,
+        paidAmount,
+        paymentStatus,
+        status: "CONFIRMED",
+        notes: input.notes ?? null,
+        items: {
+          create: preparedItems,
+        },
+      },
+    });
+
+    for (const item of preparedItems) {
+      await removeStockTx(tx, {
+        businessId,
+        productId: item.productId,
+        quantity: item.quantity,
+        movementType: "SALE_OUT",
+        referenceId: created.id,
+        notes: `Sale ${referenceNumber}`,
+      });
+    }
+
+    if (paidAmount.gt(0)) {
+      await tx.payment.create({
         data: {
           businessId,
-          transactionType: "PURCHASE",
-          referenceNumber,
-          transactionDate: input.transactionDate ?? new Date(),
-          supplierId: supplier.id,
-          totalAmount,
-          paidAmount,
-          paymentStatus,
-          status: "CONFIRMED",
-          notes: input.notes ?? null,
-          items: {
-            create: preparedItems,
-          },
-        },
-        include: {
-          supplier: { select: { name: true } },
-          items: true,
-        },
-      });
-
-      for (const item of preparedItems) {
-        await addStockTx(tx, {
-          businessId,
-          productId: item.productId,
-          quantity: item.quantity,
-          movementType: "PURCHASE_IN",
-          referenceId: created.id,
-          notes: `Purchase ${referenceNumber}`,
-        });
-      }
-
-      if (paidAmount.gt(0)) {
-        await tx.payment.create({
-          data: {
-            businessId,
-            transactionId: created.id,
-            amount: paidAmount,
-            paymentMethod: input.paymentMethod,
-            notes: `Initial payment for ${referenceNumber}`,
-          },
-        });
-      }
-
-      await ledgerService.recordSupplierCreditTx(tx, {
-        businessId,
-        supplierId: supplier.id,
-        transactionId: created.id,
-        amount: totalAmount,
-        notes: `Purchase ${referenceNumber}`,
-      });
-
-      if (paidAmount.gt(0)) {
-        await ledgerService.recordSupplierDebitTx(tx, {
-          businessId,
-          supplierId: supplier.id,
           transactionId: created.id,
           amount: paidAmount,
-          notes: `Payment on purchase ${referenceNumber}`,
-        });
-      }
-
-      const full = await tx.transaction.findUniqueOrThrow({
-        where: { id: created.id },
-        include: {
-          supplier: { select: { name: true } },
-          customer: { select: { name: true } },
-          items: true,
-          payments: { orderBy: { createdAt: "desc" } },
+          paymentMethod: input.paymentMethod,
+          notes: `Initial payment for ${referenceNumber}`,
         },
       });
+    }
 
-      return serializeTransaction(full);
+    if (customer) {
+      await ledgerService.recordCustomerDebitTx(tx, {
+        businessId,
+        customerId: customer.id,
+        transactionId: created.id,
+        amount: totalAmount,
+        notes: `Sale ${referenceNumber}`,
+      });
+
+      if (paidAmount.gt(0)) {
+        await ledgerService.recordCustomerCreditTx(tx, {
+          businessId,
+          customerId: customer.id,
+          transactionId: created.id,
+          amount: paidAmount,
+          notes: `Payment on sale ${referenceNumber}`,
+        });
+      }
+    }
+
+    const full = await tx.transaction.findUniqueOrThrow({
+      where: { id: created.id },
+      include: {
+        customer: { select: { name: true } },
+        supplier: { select: { name: true } },
+        items: true,
+        payments: { orderBy: { createdAt: "desc" } },
+      },
     });
+
+    return serializeTransaction(full);
   },
 
   /**
@@ -314,143 +513,162 @@ export const transactionService = {
    */
   async recordSale(
     businessId: string,
-    input: CreateSaleInput,
+    input: SaleTxInput,
     db?: PrismaClient
   ): Promise<SerializedTransaction> {
     const prisma = db ?? requirePrisma();
+    return prisma.$transaction((tx) =>
+      transactionService.recordSaleTx(tx, businessId, input)
+    );
+  },
 
-    return prisma.$transaction(async (tx) => {
-      let customer: { id: string; name: string } | null = null;
-      if (input.customerId) {
-        customer = await tx.customer.findFirst({
-          where: { id: input.customerId, businessId },
-          select: { id: true, name: true },
-        });
-        if (!customer) {
-          throw new NotFoundError("Customer not found for this business.");
-        }
+  /**
+   * Records a pending CUSTOMER_ORDER transaction.
+   * IMPORTANT: Does NOT deduct inventory until explicit order fulfillment.
+   */
+  async recordCustomerOrderTx(
+    tx: TxClient,
+    businessId: string,
+    input: CustomerOrderTxInput
+  ): Promise<SerializedTransaction> {
+    if (input.items.length === 0) {
+      throw new ValidationError("Customer order must contain at least one item.");
+    }
+
+    if (input.customerId) {
+      const customer = await tx.customer.findFirst({
+        where: { id: input.customerId, businessId },
+        select: { id: true },
+      });
+      if (!customer) {
+        throw new NotFoundError("Customer not found for this business.");
       }
+    }
 
-      const productIds = [...new Set(input.items.map((i) => i.productId))];
-      const products = await tx.product.findMany({
-        where: { id: { in: productIds }, businessId, isActive: true },
-      });
-      const productMap = new Map(products.map((p) => [p.id, p]));
+    const preparedItems = input.items.map((item) => {
+      const qty = roundStock(item.quantity);
+      const unitPrice = roundMoney(item.unitPrice);
+      const totalPrice = roundMoney(mulDecimals(qty, unitPrice));
+      return {
+        productId: item.productId ?? null,
+        productNameSnapshot: item.productNameSnapshot,
+        quantity: qty,
+        unitPrice,
+        totalPrice,
+      };
+    });
 
-      const preparedItems = input.items.map((item) => {
-        const product = productMap.get(item.productId);
-        if (!product) {
-          throw new NotFoundError(
-            `Active product (${item.productId}) not found for this business.`
-          );
-        }
-        const qty = roundStock(item.quantity);
-        const unitPrice = roundMoney(
-          item.unitPrice !== undefined ? item.unitPrice : product.sellingPrice
-        );
-        const totalPrice = roundMoney(mulDecimals(qty, unitPrice));
-        return {
-          productId: product.id,
-          productNameSnapshot: product.name,
-          quantity: qty,
-          unitPrice,
-          totalPrice,
-        };
-      });
+    const totalAmount = roundMoney(
+      sumDecimals(preparedItems.map((i) => i.totalPrice))
+    );
+    const referenceNumber = input.referenceNumber ?? generateReference("ORD");
 
-      const totalAmount = roundMoney(
-        sumDecimals(preparedItems.map((i) => i.totalPrice))
+    const created = await tx.transaction.create({
+      data: {
+        businessId,
+        transactionType: "CUSTOMER_ORDER",
+        referenceNumber,
+        transactionDate: input.transactionDate ?? new Date(),
+        customerId: input.customerId ?? null,
+        documentId: input.documentId ?? null,
+        totalAmount,
+        paidAmount: roundMoney(0),
+        paymentStatus: "UNPAID",
+        status: "PENDING_CONFIRMATION",
+        notes: input.notes ?? null,
+        items: {
+          create: preparedItems,
+        },
+      },
+    });
+
+    const full = await tx.transaction.findUniqueOrThrow({
+      where: { id: created.id },
+      include: {
+        customer: { select: { name: true } },
+        supplier: { select: { name: true } },
+        items: true,
+        payments: { orderBy: { createdAt: "desc" } },
+      },
+    });
+
+    return serializeTransaction(full);
+  },
+
+  /**
+   * Records a business EXPENSE transaction without affecting inventory stock.
+   */
+  async recordExpenseTx(
+    tx: TxClient,
+    businessId: string,
+    input: ExpenseTxInput
+  ): Promise<SerializedTransaction> {
+    const totalAmount = roundMoney(input.totalAmount);
+    const paidAmount = roundMoney(input.paidAmount);
+    if (totalAmount.lte(0)) {
+      throw new ValidationError("Expense amount must be greater than zero.");
+    }
+    if (paidAmount.gt(totalAmount)) {
+      throw new ValidationError(
+        "Expense paid amount cannot exceed total expense amount."
       );
-      const paidAmount = roundMoney(input.paidAmount);
+    }
 
-      if (paidAmount.gt(totalAmount)) {
-        throw new ValidationError(
-          `Paid amount (₹${paidAmount.toString()}) cannot exceed bill total (₹${totalAmount.toString()}).`
-        );
-      }
+    const paymentStatus = computePaymentStatus(totalAmount, paidAmount);
+    const referenceNumber = input.referenceNumber ?? generateReference("EXP");
+    const label = input.category
+      ? `[${input.category}] ${input.description}`
+      : input.description;
 
-      if (!customer && paidAmount.lt(totalAmount)) {
-        throw new ValidationError(
-          "Walk-in sales must be paid in full. Select a customer to record credit (Udhaar)."
-        );
-      }
+    const created = await tx.transaction.create({
+      data: {
+        businessId,
+        transactionType: "EXPENSE",
+        referenceNumber,
+        transactionDate: input.transactionDate ?? new Date(),
+        documentId: input.documentId ?? null,
+        totalAmount,
+        paidAmount,
+        paymentStatus,
+        status: "CONFIRMED",
+        notes: input.notes ?? label,
+        items: {
+          create: [
+            {
+              productId: null,
+              productNameSnapshot: label,
+              quantity: roundStock(1),
+              unitPrice: totalAmount,
+              totalPrice: totalAmount,
+            },
+          ],
+        },
+      },
+    });
 
-      const paymentStatus = computePaymentStatus(totalAmount, paidAmount);
-      const referenceNumber = generateReference("BILL");
-
-      const created = await tx.transaction.create({
+    if (paidAmount.gt(0)) {
+      await tx.payment.create({
         data: {
           businessId,
-          transactionType: "SALE",
-          referenceNumber,
-          transactionDate: input.transactionDate ?? new Date(),
-          customerId: customer?.id ?? null,
-          totalAmount,
-          paidAmount,
-          paymentStatus,
-          status: "CONFIRMED",
-          notes: input.notes ?? null,
-          items: {
-            create: preparedItems,
-          },
-        },
-      });
-
-      for (const item of preparedItems) {
-        await removeStockTx(tx, {
-          businessId,
-          productId: item.productId,
-          quantity: item.quantity,
-          movementType: "SALE_OUT",
-          referenceId: created.id,
-          notes: `Sale ${referenceNumber}`,
-        });
-      }
-
-      if (paidAmount.gt(0)) {
-        await tx.payment.create({
-          data: {
-            businessId,
-            transactionId: created.id,
-            amount: paidAmount,
-            paymentMethod: input.paymentMethod,
-            notes: `Initial payment for ${referenceNumber}`,
-          },
-        });
-      }
-
-      if (customer) {
-        await ledgerService.recordCustomerDebitTx(tx, {
-          businessId,
-          customerId: customer.id,
           transactionId: created.id,
-          amount: totalAmount,
-          notes: `Sale ${referenceNumber}`,
-        });
-
-        if (paidAmount.gt(0)) {
-          await ledgerService.recordCustomerCreditTx(tx, {
-            businessId,
-            customerId: customer.id,
-            transactionId: created.id,
-            amount: paidAmount,
-            notes: `Payment on sale ${referenceNumber}`,
-          });
-        }
-      }
-
-      const full = await tx.transaction.findUniqueOrThrow({
-        where: { id: created.id },
-        include: {
-          customer: { select: { name: true } },
-          supplier: { select: { name: true } },
-          items: true,
-          payments: { orderBy: { createdAt: "desc" } },
+          amount: paidAmount,
+          paymentMethod: input.paymentMethod,
+          notes: `Expense payment (${referenceNumber})`,
         },
       });
+    }
 
-      return serializeTransaction(full);
+    const full = await tx.transaction.findUniqueOrThrow({
+      where: { id: created.id },
+      include: {
+        customer: { select: { name: true } },
+        supplier: { select: { name: true } },
+        items: true,
+        payments: { orderBy: { createdAt: "desc" } },
+      },
     });
+
+    return serializeTransaction(full);
   },
 
   /**
