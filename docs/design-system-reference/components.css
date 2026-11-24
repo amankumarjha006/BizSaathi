@@ -1,0 +1,713 @@
+/* ==========================================================================
+   BizSaathi Design System — Components
+   --------------------------------------------------------------------------
+   Every rule here reads from design-tokens.css. No color is hardcoded.
+
+   Class naming: BEM-ish, prefixed `bs-` for BizSaathi so the system can
+   live inside a host app without colliding with that app's own styles.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-4);
+  text-wrap: balance;
+  color: var(--text);
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+h5 { font-size: var(--text-md); }
+h6 { font-size: var(--text-base); }
+
+p {
+  margin: 0 0 var(--space-4);
+  max-width: 65ch;
+  line-height: var(--leading-relaxed);
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+small { font-size: var(--text-sm); }
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--space-8) 0;
+}
+
+/* One focus treatment for the whole system: a ring in the accent color,
+   offset so it never crowds the component it belongs to. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Utility
+   -------------------------------------------------------------------------- */
+
+.bs-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bs-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.bs-stack > * + * { margin-top: var(--space-4); }
+.bs-stack-sm > * + * { margin-top: var(--space-2); }
+.bs-stack-lg > * + * { margin-top: var(--space-8); }
+
+.bs-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* Section eyebrow: small, letterspaced, uppercase. The system's one
+   permitted all-caps treatment. */
+.bs-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.bs-lede {
+  font-size: var(--text-md);
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  max-width: 58ch;
+}
+
+/* --------------------------------------------------------------------------
+   Button
+   -------------------------------------------------------------------------- */
+
+.bs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  min-height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-snug);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.bs-btn:disabled,
+.bs-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.bs-btn--primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-xs);
+}
+
+.bs-btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  color: var(--accent-contrast);
+}
+
+.bs-btn--secondary {
+  background: var(--secondary);
+  color: var(--secondary-contrast);
+}
+
+.bs-btn--secondary:hover:not(:disabled) {
+  background: var(--secondary-hover);
+  color: var(--secondary-contrast);
+}
+
+.bs-btn--outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.bs-btn--outline:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+.bs-btn--ghost {
+  background: transparent;
+  color: var(--accent);
+  border-color: transparent;
+}
+
+.bs-btn--ghost:hover:not(:disabled) {
+  background: var(--accent-subtle);
+  color: var(--accent-hover);
+}
+
+.bs-btn--danger {
+  background: var(--danger);
+  color: var(--accent-contrast);
+}
+
+.bs-btn--danger:hover:not(:disabled) {
+  background: var(--danger);
+  filter: brightness(1.08);
+}
+
+.bs-btn--sm {
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.bs-btn--lg {
+  min-height: 3rem;
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+}
+
+.bs-btn--block {
+  width: 100%;
+}
+
+.bs-btn--icon {
+  padding: var(--space-2);
+  min-width: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Form field
+   Label, control, and helper/error text as one unit.
+   -------------------------------------------------------------------------- */
+
+.bs-field {
+  display: block;
+  margin-bottom: var(--space-5);
+}
+
+.bs-field__label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+
+.bs-field__required {
+  color: var(--danger);
+  margin-left: 0.15em;
+}
+
+.bs-field__hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.bs-field__error {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.bs-field--invalid .bs-input,
+.bs-field--invalid .bs-select,
+.bs-field--invalid .bs-textarea {
+  border-color: var(--danger);
+}
+
+.bs-input,
+.bs-select,
+.bs-textarea {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  min-height: 2.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.4;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.bs-textarea {
+  min-height: 6rem;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.bs-input::placeholder,
+.bs-textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+.bs-input:hover:not(:disabled),
+.bs-select:hover:not(:disabled),
+.bs-textarea:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+
+.bs-input:focus,
+.bs-select:focus,
+.bs-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.bs-input:disabled,
+.bs-select:disabled,
+.bs-textarea:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.bs-select {
+  appearance: none;
+  padding-right: var(--space-8);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 2px),
+    calc(100% - 13px) calc(50% + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* Checkbox / radio — accent-colored control, native input preserved. */
+.bs-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+
+.bs-check input[type="checkbox"],
+.bs-check input[type="radio"] {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.2em 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Card & panel
+   -------------------------------------------------------------------------- */
+
+.bs-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-xs);
+}
+
+.bs-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.bs-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.bs-card__title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  margin: 0;
+}
+
+.bs-card__body {
+  padding: var(--space-6);
+}
+
+.bs-card__footer {
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-sunken);
+  border-top: 1px solid var(--border);
+}
+
+/* The ledger figure. Money gets the serif and tabular figures so columns
+   of amounts line up like a printed statement. */
+.bs-figure {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.bs-figure--positive { color: var(--success); }
+.bs-figure--negative { color: var(--danger); }
+
+.bs-stat {
+  display: block;
+}
+
+.bs-stat__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.bs-stat__value {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+.bs-stat__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.bs-stat__delta--up { color: var(--success); }
+.bs-stat__delta--down { color: var(--danger); }
+
+/* --------------------------------------------------------------------------
+   Badge / chip
+   Status only. Never decoration, never a button.
+   -------------------------------------------------------------------------- */
+
+.bs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.bs-badge--accent {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.bs-badge--success {
+  background: var(--success-subtle);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.bs-badge--warning {
+  background: var(--warning-subtle);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+.bs-badge--danger {
+  background: var(--danger-subtle);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.bs-badge--neutral {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* --------------------------------------------------------------------------
+   Table — the ledger itself
+   -------------------------------------------------------------------------- */
+
+.bs-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.bs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.bs-table caption {
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.bs-table th {
+  padding: var(--space-3) var(--space-5);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.bs-table td {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.bs-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.bs-table tbody tr:hover td {
+  background: var(--surface-sunken);
+}
+
+.bs-table__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Alert
+   -------------------------------------------------------------------------- */
+
+.bs-alert {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.bs-alert__title {
+  font-weight: var(--weight-semibold);
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-body);
+}
+
+.bs-alert__body { margin: 0; color: var(--text-muted); }
+
+.bs-alert--success {
+  background: var(--success-subtle);
+  border-color: var(--success-border);
+  border-left-color: var(--success);
+}
+.bs-alert--success .bs-alert__title { color: var(--success); }
+
+.bs-alert--warning {
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+  border-left-color: var(--warning);
+}
+.bs-alert--warning .bs-alert__title { color: var(--warning); }
+
+.bs-alert--danger {
+  background: var(--danger-subtle);
+  border-color: var(--danger-border);
+  border-left-color: var(--danger);
+}
+.bs-alert--danger .bs-alert__title { color: var(--danger); }
+
+.bs-alert--info {
+  background: var(--info-subtle);
+  border-color: var(--info-border);
+  border-left-color: var(--info);
+}
+.bs-alert--info .bs-alert__title { color: var(--info); }
+
+/* --------------------------------------------------------------------------
+   Nav / tabs
+   -------------------------------------------------------------------------- */
+
+.bs-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.bs-nav__link {
+  padding: var(--space-3) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+
+.bs-nav__link:hover {
+  color: var(--text);
+}
+
+.bs-nav__link[aria-current="page"],
+.bs-nav__link.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Progress — a cash-flow bar
+   -------------------------------------------------------------------------- */
+
+.bs-progress {
+  width: 100%;
+  height: 0.5rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bs-progress__bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+.bs-progress__bar--warning { background: var(--warning); }
+.bs-progress__bar--danger { background: var(--danger); }
+
+/* --------------------------------------------------------------------------
+   Skeleton — loading placeholder
+   -------------------------------------------------------------------------- */
+
+.bs-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--border) 37%,
+    var(--surface-sunken) 63%
+  );
+  background-size: 400% 100%;
+  animation: bs-skeleton 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+  height: 1rem;
+}
+
+@keyframes bs-skeleton {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-skeleton {
+    animation: none;
+    background: var(--surface-sunken);
+  }
+}

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BizSaathi Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Serif+Devanagari:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="stylesheet" href="/components.css">
+<style>
+  /* Page-only layout for the styleguide. The design system itself never
+     needs these. */
+  .sg-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-raised);
+  }
+  .sg-header__inner,
+  .sg-main,
+  .sg-footer {
+    max-width: var(--container-lg);
+    margin: 0 auto;
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+  .sg-header__inner {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+  }
+  .sg-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+  .sg-mark {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-lg);
+    flex: 0 0 auto;
+  }
+  .sg-brand__name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    margin: 0;
+    line-height: 1;
+  }
+  .sg-header h1 {
+    margin: 0;
+    font-size: var(--text-3xl);
+  }
+  .sg-header p {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    max-width: 52ch;
+  }
+  .sg-main { padding-top: var(--space-12); padding-bottom: var(--space-16); }
+  .sg-section {
+    margin-bottom: var(--space-16);
+    scroll-margin-top: var(--space-6);
+  }
+  .sg-section__head {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+  .sg-section__head h2 {
+    margin: 0;
+    font-size: var(--text-2xl);
+  }
+  .sg-section__head p {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    max-width: 62ch;
+  }
+  .sg-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .sg-grid--2 { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+  .sg-grid--3 { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+  .sg-grid--4 { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+  .sg-demo {
+    padding: var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+  }
+  .sg-demo__label {
+    font-size: var(--text-2xs);
+    font-family: var(--font-mono);
+    color: var(--text-subtle);
+    display: block;
+    margin-bottom: var(--space-3);
+    word-break: break-all;
+  }
+  .sg-swatch {
+    height: 4.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: var(--space-2);
+  }
+  .sg-swatch__name {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+    margin: 0 0 var(--space-1);
+  }
+  .sg-swatch__hex {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .sg-type-row {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    gap: var(--space-4);
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .sg-type-row:last-child { border-bottom: 0; }
+  .sg-type-row__meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-subtle);
+  }
+  .sg-type-row__sample { min-width: 0; }
+  .sg-footer {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-10);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+  .sg-skip {
+    position: absolute;
+    left: -9999px;
+  }
+  .sg-skip:focus {
+    left: var(--space-4);
+    top: var(--space-4);
+    z-index: var(--z-toast);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+  }
+  @media (max-width: 40rem) {
+    .sg-type-row { grid-template-columns: 1fr; gap: var(--space-1); }
+    .sg-main { padding-top: var(--space-8); }
+  }
+</style>
+</head>
+<body>
+<a class="sg-skip" href="#main">Skip to content</a>
+
+<header class="sg-header">
+  <div class="sg-header__inner">
+    <div>
+      <div class="sg-brand">
+        <span class="sg-mark" aria-hidden="true">बि</span>
+        <p class="sg-brand__name">BizSaathi</p>
+      </div>
+      <h1>Design System</h1>
+      <p>A warm, ledger-inspired system for the bookkeeping companion built for Indian small businesses.</p>
+    </div>
+    <div class="bs-cluster">
+      <a class="bs-btn bs-btn--outline bs-btn--sm" href="#color">Color</a>
+      <a class="bs-btn bs-btn--outline bs-btn--sm" href="#type">Type</a>
+      <a class="bs-btn bs-btn--outline bs-btn--sm" href="#components">Components</a>
+      <a class="bs-btn bs-btn--primary bs-btn--sm" href="#usage">Usage</a>
+    </div>
+  </div>
+</header>
+
+<main class="sg-main" id="main">
+
+  <!-- ============================ COLOR ============================ -->
+  <section class="sg-section" id="color">
+    <div class="sg-section__head">
+      <p class="bs-eyebrow">01 — Foundations</p>
+      <h2>Color</h2>
+      <p>Warm paper surfaces, deep ledger green as the single accent, marigold as a restrained secondary, and a four-way status set. Every text/background pair below was checked against WCAG 2.1 with real contrast math — the measured ratios are in the README.</p>
+    </div>
+
+    <div class="sg-grid sg-grid--2" style="margin-bottom: var(--space-8);">
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Accent & surfaces</p>
+        <div class="sg-grid sg-grid--3">
+          <div>
+            <div class="sg-swatch" style="background: var(--accent);"></div>
+            <p class="sg-swatch__name">Accent</p>
+            <p class="sg-swatch__hex">#0f5f4a</p>
+          </div>
+          <div>
+            <div class="sg-swatch" style="background: var(--surface);"></div>
+            <p class="sg-swatch__name">Surface</p>
+            <p class="sg-swatch__hex">#fbf8f3</p>
+          </div>
+          <div>
+            <div class="sg-swatch" style="background: var(--surface-raised);"></div>
+            <p class="sg-swatch__name">Raised</p>
+            <p class="sg-swatch__hex">#ffffff</p>
+          </div>
+        </div>
+      </div>
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Secondary & status</p>
+        <div class="sg-grid sg-grid--3">
+          <div>
+            <div class="sg-swatch" style="background: var(--secondary);"></div>
+            <p class="sg-swatch__name">Secondary</p>
+            <p class="sg-swatch__hex">#8f4405</p>
+          </div>
+          <div>
+            <div class="sg-swatch" style="background: var(--success);"></div>
+            <p class="sg-swatch__name">Success</p>
+            <p class="sg-swatch__hex">#14713f</p>
+          </div>
+          <div>
+            <div class="sg-swatch" style="background: var(--danger);"></div>
+            <p class="sg-swatch__name">Danger</p>
+            <p class="sg-swatch__hex">#a8321f</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="bs-eyebrow">Semantic tokens — light</p>
+    <div class="sg-grid sg-grid--4" style="margin-bottom: var(--space-8);">
+      <div><div class="sg-swatch" style="background: var(--text);"></div><p class="sg-swatch__name">Text</p><p class="sg-swatch__hex">#1f1a15</p></div>
+      <div><div class="sg-swatch" style="background: var(--text-muted);"></div><p class="sg-swatch__name">Text muted</p><p class="sg-swatch__hex">#6b6157</p></div>
+      <div><div class="sg-swatch" style="background: var(--text-subtle);"></div><p class="sg-swatch__name">Text subtle</p><p class="sg-swatch__hex">#7a7064</p></div>
+      <div><div class="sg-swatch" style="background: var(--border-strong);"></div><p class="sg-swatch__name">Border strong</p><p class="sg-swatch__hex">#7a7064</p></div>
+      <div><div class="sg-swatch" style="background: var(--accent-subtle);"></div><p class="sg-swatch__name">Accent subtle</p><p class="sg-swatch__hex">#e8f0ec</p></div>
+      <div><div class="sg-swatch" style="background: var(--secondary-subtle);"></div><p class="sg-swatch__name">Secondary subtle</p><p class="sg-swatch__hex">#f9eee2</p></div>
+      <div><div class="sg-swatch" style="background: var(--success-subtle);"></div><p class="sg-swatch__name">Success subtle</p><p class="sg-swatch__hex">#e6f2ea</p></div>
+      <div><div class="sg-swatch" style="background: var(--warning-subtle);"></div><p class="sg-swatch__name">Warning subtle</p><p class="sg-swatch__hex">#f8efe0</p></div>
+      <div><div class="sg-swatch" style="background: var(--danger-subtle);"></div><p class="sg-swatch__name">Danger subtle</p><p class="sg-swatch__hex">#fbeae6</p></div>
+      <div><div class="sg-swatch" style="background: var(--info-subtle);"></div><p class="sg-swatch__name">Info subtle</p><p class="sg-swatch__hex">#e6f0f5</p></div>
+      <div><div class="sg-swatch" style="background: var(--surface-sunken);"></div><p class="sg-swatch__name">Surface sunken</p><p class="sg-swatch__hex">#f3efe7</p></div>
+      <div><div class="sg-swatch" style="background: var(--border);"></div><p class="sg-swatch__name">Border</p><p class="sg-swatch__hex">#e2dcd1</p></div>
+    </div>
+
+    <p class="bs-eyebrow">Semantic tokens — dark</p>
+    <div class="sg-grid sg-grid--4">
+      <div><div class="sg-swatch" style="background: var(--surface);"></div><p class="sg-swatch__name">Surface</p><p class="sg-swatch__hex">#14120f</p></div>
+      <div><div class="sg-swatch" style="background: var(--surface-raised);"></div><p class="sg-swatch__name">Raised</p><p class="sg-swatch__hex">#1f1c18</p></div>
+      <div><div class="sg-swatch" style="background: var(--accent);"></div><p class="sg-swatch__name">Accent</p><p class="sg-swatch__hex">#57c79a</p></div>
+      <div><div class="sg-swatch" style="background: var(--accent-subtle);"></div><p class="sg-swatch__name">Accent subtle</p><p class="sg-swatch__hex">#16302a</p></div>
+      <div><div class="sg-swatch" style="background: var(--text);"></div><p class="sg-swatch__name">Text</p><p class="sg-swatch__hex">#f5f1ea</p></div>
+      <div><div class="sg-swatch" style="background: var(--text-muted);"></div><p class="sg-swatch__name">Text muted</p><p class="sg-swatch__hex">#a89e92</p></div>
+      <div><div class="sg-swatch" style="background: var(--border-strong);"></div><p class="sg-swatch__name">Border strong</p><p class="sg-swatch__hex">#7a7167</p></div>
+      <div><div class="sg-swatch" style="background: var(--secondary);"></div><p class="sg-swatch__name">Secondary</p><p class="sg-swatch__hex">#f0a563</p></div>
+    </div>
+  </section>
+
+  <!-- ============================ TYPE ============================ -->
+  <section class="sg-section" id="type">
+    <div class="sg-section__head">
+      <p class="bs-eyebrow">02 — Foundations</p>
+      <h2>Typography</h2>
+      <p>Source Serif 4 carries voice, Public Sans carries work, IBM Plex Mono carries amounts and IDs, and Noto Devanagari is a first-class fallback rather than an afterthought — "Saathi" is Hindi, and the product is built for Indian small businesses.</p>
+    </div>
+
+    <div class="sg-demo" style="margin-bottom: var(--space-6);">
+      <p class="bs-eyebrow">Display — Source Serif 4</p>
+      <div class="sg-type-row"><span class="sg-type-row__meta">3xl / 2.44rem</span><span class="sg-type-row__sample" style="font-family: var(--font-display); font-size: var(--text-3xl); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); line-height: var(--leading-tight);">Cash flow, without the guesswork</span></div>
+      <div class="sg-type-row"><span class="sg-type-row__meta">2xl / 1.95rem</span><span class="sg-type-row__sample" style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--weight-semibold); line-height: var(--leading-tight);">Your books, in plain language</span></div>
+      <div class="sg-type-row"><span class="sg-type-row__meta">xl / 1.56rem</span><span class="sg-type-row__sample" style="font-family: var(--font-display); font-size: var(--text-xl); font-weight: var(--weight-semibold);">March reconciliation</span></div>
+      <div class="sg-type-row"><span class="sg-type-row__meta">lg / 1.25rem</span><span class="sg-type-row__sample" style="font-family: var(--font-display); font-size: var(--text-lg); font-weight: var(--weight-semibold);">Outstanding invoices</span></div>
+    </div>
+
+    <div class="sg-demo" style="margin-bottom: var(--space-6);">
+      <p class="bs-eyebrow">Body — Public Sans</p>
+      <div class="sg-type-row"><span class="sg-type-row__meta">base / 1rem</span><span class="sg-type-row__sample" style="font-size: var(--text-base); line-height: var(--leading-relaxed);">Record an invoice the moment it is raised, even before the payment arrives. BizSaathi matches it to a customer and keeps the ledger balanced.</span></div>
+      <div class="sg-type-row"><span class="sg-type-row__meta">sm / 0.875rem</span><span class="sg-type-row__sample" style="font-size: var(--text-sm);">Secondary and supporting copy sits at the small step.</span></div>
+      <div class="sg-type-row"><span class="sg-type-row__meta">xs / 0.75rem</span><span class="sg-type-row__sample" style="font-size: var(--text-xs); color: var(--text-muted);">Table headers and captions use the smallest step.</span></div>
+    </div>
+
+    <div class="sg-demo" style="margin-bottom: var(--space-6);">
+      <p class="bs-eyebrow">Mono — IBM Plex Mono</p>
+      <div class="sg-type-row"><span class="sg-type-row__meta">body</span><span class="sg-type-row__sample" style="font-family: var(--font-mono);">INV-2026-0342 · ₹1,48,500.00</span></div>
+    </div>
+
+    <div class="sg-demo">
+      <p class="bs-eyebrow">Devanagari fallback</p>
+      <p style="font-family: var(--font-display); font-size: var(--text-xl); margin-bottom: var(--space-2);">आपका किताब, आपकी भाषा में</p>
+      <p style="margin-bottom: 0;">यह डिज़ाइन सिस्टम देवनागरी लिपि को पहले दर्जे में रखता है — बिना किसी टूटे हुए अक्षर के।</p>
+    </div>
+  </section>
+
+  <!-- ============================ SPACING ============================ -->
+  <section class="sg-section" id="spacing">
+    <div class="sg-section__head">
+      <p class="bs-eyebrow">03 — Foundations</p>
+      <h2>Spacing & shape</h2>
+      <p>A 4px base unit with a 1.25 type scale. Radius stays small so controls read as tools rather than toys; pills are reserved for status chips.</p>
+    </div>
+    <div class="sg-grid sg-grid--2">
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Space scale (4px base)</p>
+        <div class="sg-stack-sm">
+          <div><code>--space-1</code> · 4px</div>
+          <div><code>--space-2</code> · 8px</div>
+          <div><code>--space-3</code> · 12px</div>
+          <div><code>--space-4</code> · 16px</div>
+          <div><code>--space-6</code> · 24px</div>
+          <div><code>--space-8</code> · 32px</div>
+          <div><code>--space-12</code> · 48px</div>
+        </div>
+      </div>
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Radius</p>
+        <div class="bs-cluster">
+          <span style="width: 4rem; height: 4rem; background: var(--accent-subtle); border: 1px solid var(--accent-border); border-radius: var(--radius-xs); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs);">2</span>
+          <span style="width: 4rem; height: 4rem; background: var(--accent-subtle); border: 1px solid var(--accent-border); border-radius: var(--radius-sm); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs);">4</span>
+          <span style="width: 4rem; height: 4rem; background: var(--accent-subtle); border: 1px solid var(--accent-border); border-radius: var(--radius-md); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs);">6</span>
+          <span style="width: 4rem; height: 4rem; background: var(--accent-subtle); border: 1px solid var(--accent-border); border-radius: var(--radius-lg); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs);">10</span>
+          <span style="width: 4rem; height: 4rem; background: var(--accent-subtle); border: 1px solid var(--accent-border); border-radius: var(--radius-xl); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs);">14</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ COMPONENTS ============================ -->
+  <section class="sg-section" id="components">
+    <div class="sg-section__head">
+      <p class="bs-eyebrow">04 — Components</p>
+      <h2>Component library</h2>
+      <p>Everything below is live markup using the shipped classes. The prefix is <code>bs-</code> so the system can live inside a host application without colliding with that application's own styles.</p>
+    </div>
+
+    <div class="sg-grid sg-grid--2" style="margin-bottom: var(--space-8);">
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Buttons</p>
+        <div class="bs-cluster">
+          <button class="bs-btn bs-btn--primary">Record invoice</button>
+          <button class="bs-btn bs-btn--secondary">Export</button>
+          <button class="bs-btn bs-btn--outline">Reconcile</button>
+          <button class="bs-btn bs-btn--ghost">Dismiss</button>
+        </div>
+        <div class="bs-cluster" style="margin-top: var(--space-3);">
+          <button class="bs-btn bs-btn--primary bs-btn--sm">Small</button>
+          <button class="bs-btn bs-btn--primary bs-btn--lg">Large</button>
+          <button class="bs-btn bs-btn--primary" disabled>Disabled</button>
+        </div>
+      </div>
+
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Badges</p>
+        <div class="bs-cluster">
+          <span class="bs-badge bs-badge--accent">In progress</span>
+          <span class="bs-badge bs-badge--success">Paid</span>
+          <span class="bs-badge bs-badge--warning">Due soon</span>
+          <span class="bs-badge bs-badge--danger">Overdue</span>
+          <span class="bs-badge bs-badge--neutral">Draft</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg-grid sg-grid--2" style="margin-bottom: var(--space-8);">
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Form field</p>
+        <div class="bs-field" style="margin-bottom: var(--space-4);">
+          <label class="bs-field__label" for="sg-customer">Customer <span class="bs-field__required" aria-hidden="true">*</span></label>
+          <input class="bs-input" id="sg-customer" type="text" placeholder="Sharma Textiles">
+          <p class="bs-field__hint">Match an existing customer to keep the ledger balanced.</p>
+        </div>
+        <div class="bs-field bs-field--invalid" style="margin-bottom: var(--space-4);">
+          <label class="bs-field__label" for="sg-amount">Amount</label>
+          <input class="bs-input" id="sg-amount" type="text" value="₹" aria-invalid="true" aria-describedby="sg-amount-err">
+          <p class="bs-field__error" id="sg-amount-err">Enter an amount greater than zero.</p>
+        </div>
+        <div class="bs-field" style="margin-bottom: 0;">
+          <label class="bs-field__label" for="sg-type">Type</label>
+          <select class="bs-select" id="sg-type">
+            <option>Sales invoice</option>
+            <option>Purchase bill</option>
+            <option>Expense</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Alerts</p>
+        <div class="bs-stack-sm">
+          <div class="bs-alert bs-alert--success">
+            <div><p class="bs-alert__title">Books balanced</p><p class="bs-alert__body">All March entries reconcile against the bank statement.</p></div>
+          </div>
+          <div class="bs-alert bs-alert--warning">
+            <div><p class="bs-alert__title">GST filing due</p><p class="bs-alert__body">GSTR-3B is due in 6 days.</p></div>
+          </div>
+          <div class="bs-alert bs-alert--danger">
+            <div><p class="bs-alert__title">Payment failed</p><p class="bs-alert__body">The bank declined the transfer. Retry or use another method.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: var(--space-8);">
+      <p class="bs-eyebrow">Card & ledger figure</p>
+      <div class="bs-card">
+        <div class="bs-stat">
+          <p class="bs-stat__label">Receivables</p>
+          <p class="bs-figure bs-figure--positive bs-numeric">₹4,82,150</p>
+          <span class="bs-stat__delta bs-stat__delta--up">▲ 12.4% vs last month</span>
+        </div>
+        <div class="bs-progress" style="margin-top: var(--space-4);" role="progressbar" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100" aria-label="Collection progress">
+          <div class="bs-progress__bar" style="width: 68%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: var(--space-8);">
+      <p class="bs-eyebrow">Table</p>
+      <div class="bs-table-wrap">
+        <table class="bs-table">
+          <caption>Outstanding invoices, March 2026</caption>
+          <thead>
+            <tr>
+              <th scope="col">Invoice</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Status</th>
+              <th scope="col" style="text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>INV-2026-0342</td>
+              <td>Sharma Textiles</td>
+              <td><span class="bs-badge bs-badge--success">Paid</span></td>
+              <td class="bs-table__num">₹1,48,500</td>
+            </tr>
+            <tr>
+              <td>INV-2026-0343</td>
+              <td>Krishna Traders</td>
+              <td><span class="bs-badge bs-badge--warning">Due soon</span></td>
+              <td class="bs-table__num">₹96,200</td>
+            </tr>
+            <tr>
+              <td>INV-2026-0344</td>
+              <td>Balaji Exports</td>
+              <td><span class="bs-badge bs-badge--danger">Overdue</span></td>
+              <td class="bs-table__num">₹2,37,450</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sg-grid sg-grid--2">
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Navigation</p>
+        <nav class="bs-nav" aria-label="Section">
+          <a class="bs-nav__link" href="#components" aria-current="page">Overview</a>
+          <a class="bs-nav__link" href="#components">Transactions</a>
+          <a class="bs-nav__link" href="#components">Reports</a>
+          <a class="bs-nav__link" href="#components">Settings</a>
+        </nav>
+      </div>
+      <div class="sg-demo">
+        <p class="bs-eyebrow">Loading</p>
+        <div class="sg-stack-sm">
+          <div class="bs-skeleton" style="width: 80%;"></div>
+          <div class="bs-skeleton" style="width: 60%;"></div>
+          <div class="bs-skeleton" style="width: 45%;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ USAGE ============================ -->
+  <section class="sg-section" id="usage">
+    <div class="sg-section__head">
+      <p class="bs-eyebrow">05 — Rules</p>
+      <h2>Usage principles</h2>
+      <p>The rules that keep the system coherent as more surfaces get built.</p>
+    </div>
+    <div class="sg-grid sg-grid--2">
+      <div class="sg-card">
+        <h3>Do</h3>
+        <ul style="margin: 0; padding-left: 1.1rem; color: var(--text-muted); line-height: var(--leading-relaxed);">
+          <li>Use <code>--accent</code> for the single primary action on a screen.</li>
+          <li>Reserve <code>--secondary</code> (marigold) for highlights and money-on-track states.</li>
+          <li>Use status colors only for status, never for decoration.</li>
+          <li>Set money in the display serif with tabular figures.</li>
+          <li>Keep body copy at <code>--text-base</code>; use <code>--text-sm</code> for supporting text.</li>
+        </ul>
+      </div>
+      <div class="sg-card">
+        <h3>Don't</h3>
+        <ul style="margin: 0; padding-left: 1.1rem; color: var(--text-muted); line-height: var(--leading-relaxed);">
+          <li>Don't add a gradient hero or a second brand color.</li>
+          <li>Don't use the accent for destructive actions — that's <code>--danger</code>.</li>
+          <li>Don't pill every container; pills are for status chips.</li>
+          <li>Don't set body copy below <code>--text-sm</code>.</li>
+          <li>Don't rely on color alone — pair status with a label or icon.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="sg-footer">
+  <div class="sg-footer">
+    <p style="margin: 0;">BizSaathi Design System v1.0 — light and dark supported, WCAG AA verified. Tokens live in <code>design-tokens.css</code>; components in <code>components.css</code>.</p>
+  </div>
+</footer>
+</body>
+</html>

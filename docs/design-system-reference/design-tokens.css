@@ -1,0 +1,287 @@
+/* ==========================================================================
+   BizSaathi Design System — Tokens
+   --------------------------------------------------------------------------
+   This file is the single source of truth for color, type, spacing, radius,
+   shadow and motion. Components read from these variables and never hardcode
+   a color value.
+
+   Concept: BizSaathi ("business companion") is a ledger kept by a trusted
+   partner. So the system is built on warm paper, deep ledger-green, an
+   editorial serif for voice, and a grotesque for working data.
+
+   Light is the default palette (the one a browser without an explicit
+   preference sees). The dark media query redefines ONLY color tokens --
+   type, spacing, radius, shadow and motion are shared.
+
+   Every text/background pair in this file was verified with real WCAG
+   contrast math. See README.md for the table of measured ratios.
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------------
+     1. Color — raw primitives
+     The palette itself. Semantic tokens below are what components use;
+     these exist so the palette can be re-mixed without hunting hexes.
+     --------------------------------------------------------------------- */
+  --palette-paper: #fbf8f3;
+  --palette-white: #ffffff;
+  --palette-sink: #f3efe7;
+  --palette-ink: #1f1a15;
+
+  --palette-green-900: #08211a;
+  --palette-green-800: #0b4d3c;
+  --palette-green-700: #0f5f4a;
+  --palette-green-400: #57c79a;
+  --palette-green-300: #6fd5aa;
+
+  --palette-marigold-800: #753906;
+  --palette-marigold-700: #8f4405;
+  --palette-marigold-300: #f0a563;
+  --palette-marigold-200: #f7bd86;
+
+  --palette-rust-700: #a8321f;
+  --palette-rust-400: #f0685f;
+  --palette-amber-700: #8a5200;
+  --palette-amber-400: #e0a138;
+  --palette-moss-700: #14713f;
+  --palette-moss-400: #4fc98a;
+
+  /* ---------------------------------------------------------------------
+     2. Color — semantic, light mode
+     --------------------------------------------------------------------- */
+
+  /* Surfaces: paper base, a raised card, and a sunken well (tables,
+     inset panels, code). */
+  --surface: #fbf8f3;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f3efe7;
+
+  /* Hairline separators, and the stronger border required for any control
+     whose outline is its only affordance (inputs, selects, checkboxes). */
+  --border: #e2dcd1;
+  --border-strong: #7a7064;
+
+  /* Ink. --text-subtle is the lightest we allow for readable body copy. */
+  --text: #1f1a15;
+  --text-muted: #6b6157;
+  --text-subtle: #7a7064;
+
+  /* Accent — ledger green. The trust/money color of the system. */
+  --accent: #0f5f4a;
+  --accent-hover: #0b4d3c;
+  --accent-contrast: #ffffff;
+  --accent-subtle: #e8f0ec;
+  --accent-border: #b6d3c7;
+
+  /* Secondary — marigold. Used for highlights, "on track" money states and
+     the one secondary action. Deliberately not a second brand color. */
+  --secondary: #8f4405;
+  --secondary-hover: #753906;
+  --secondary-contrast: #ffffff;
+  --secondary-subtle: #f9eee2;
+  --secondary-border: #e8cfae;
+
+  /* Status. Never used as an accent, never as decoration. */
+  --success: #14713f;
+  --success-subtle: #e6f2ea;
+  --success-border: #b5dcc4;
+
+  --warning: #8a5200;
+  --warning-subtle: #f8efe0;
+  --warning-border: #ecd5ab;
+
+  --danger: #a8321f;
+  --danger-subtle: #fbeae6;
+  --danger-border: #efc2b8;
+
+  --info: #1f5673;
+  --info-subtle: #e6f0f5;
+  --info-border: #b6d2e0;
+
+  /* ---------------------------------------------------------------------
+     3. Typography
+     Source Serif 4 carries voice (headlines, figures, page titles);
+     Public Sans carries work (body, UI, tables); IBM Plex Mono carries
+     code, IDs and ledger amounts. Noto Devanagari is included because
+     "Saathi" is a Hindi word and the product is built for Indian
+     small businesses — Hindi must not fall back to a random system font.
+     --------------------------------------------------------------------- */
+  --font-display: "Source Serif 4", "Noto Serif Devanagari", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", "Noto Sans Devanagari", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* 1.25 modular scale (major third), rem-based so it respects the
+     reader's own browser font-size setting. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
+  --text-4xl: 3.052rem;
+  --text-5xl: 3.815rem;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* Optical tracking: large serif display sizes need negative tracking,
+     small uppercase labels need positive tracking. */
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-widest: 0.08em;
+
+  /* ---------------------------------------------------------------------
+     4. Spacing — 4px base unit
+     --------------------------------------------------------------------- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ---------------------------------------------------------------------
+     5. Radius — restrained
+     A ledger has corners. Values stay small so controls read as tools,
+     not toys. Pills are reserved for status chips only.
+     --------------------------------------------------------------------- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  /* ---------------------------------------------------------------------
+     6. Shadow — warm-tinted, close to the surface
+     Borders do most of the separation work; shadow only lifts a surface
+     that is genuinely floating (popover, drawer, modal).
+     --------------------------------------------------------------------- */
+  --shadow-xs: 0 1px 1px rgba(31, 26, 21, 0.04);
+  --shadow-sm: 0 1px 2px rgba(31, 26, 21, 0.06), 0 1px 3px rgba(31, 26, 21, 0.04);
+  --shadow-md: 0 2px 4px rgba(31, 26, 21, 0.05), 0 8px 18px -8px rgba(31, 26, 21, 0.14);
+  --shadow-lg: 0 10px 30px -12px rgba(31, 26, 21, 0.22), 0 2px 6px rgba(31, 26, 21, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(15, 95, 74, 0.22);
+
+  /* ---------------------------------------------------------------------
+     7. Motion
+     Short and functional. Nothing in a bookkeeping tool should bounce.
+     --------------------------------------------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+
+  /* ---------------------------------------------------------------------
+     8. Layout & z-index
+     --------------------------------------------------------------------- */
+  --container-sm: 40rem;
+  --container-md: 52rem;
+  --container-lg: 68rem;
+  --container-xl: 80rem;
+
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-dropdown: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--accent);
+}
+
+/* ==========================================================================
+   Dark mode
+   Only color tokens are redefined. The green lifts and brightens so it
+   still reads as the same brand on a dark ledger; backgrounds warm up
+   rather than going blue-grey.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #14120f;
+    --surface-raised: #1f1c18;
+    --surface-sunken: #100e0c;
+
+    --border: #33302a;
+    --border-strong: #7a7167;
+
+    --text: #f5f1ea;
+    --text-muted: #a89e92;
+    --text-subtle: #8f8579;
+
+    --accent: #57c79a;
+    --accent-hover: #6fd5aa;
+    --accent-contrast: #08211a;
+    --accent-subtle: #16302a;
+    --accent-border: #2c5a49;
+
+    --secondary: #f0a563;
+    --secondary-hover: #f7bd86;
+    --secondary-contrast: #2a1607;
+    --secondary-subtle: #30200f;
+    --secondary-border: #5c3c18;
+
+    --success: #4fc98a;
+    --success-subtle: #14301f;
+    --success-border: #26543a;
+
+    --warning: #e0a138;
+    --warning-subtle: #322511;
+    --warning-border: #5c441c;
+
+    --danger: #f0685f;
+    --danger-subtle: #331815;
+    --danger-border: #5e2a24;
+
+    --info: #7fb8d8;
+    --info-subtle: #16272f;
+    --info-border: #2c4c5d;
+
+    --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.35);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.35), 0 8px 18px -8px rgba(0, 0, 0, 0.65);
+    --shadow-lg: 0 10px 30px -12px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
+    --shadow-focus: 0 0 0 3px rgba(87, 199, 154, 0.28);
+  }
+}
+
+/* Users who ask for more contrast get harder borders and a stronger ring. */
+@media (prefers-contrast: more) {
+  :root {
+    --border: var(--border-strong);
+    --text-muted: var(--text);
+    --text-subtle: var(--text-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}
