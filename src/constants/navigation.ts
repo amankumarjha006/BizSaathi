@@ -3,14 +3,17 @@ export interface NavItem {
   href: string;
   iconName:
     | "layout-dashboard"
+    | "shopping-cart"
+    | "truck"
     | "package"
     | "file-text"
     | "mic"
     | "arrow-left-right"
     | "users"
+    | "building-2"
     | "bar-chart-3"
     | "settings";
-  phase: string;
+  phase?: string;
 }
 
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
@@ -18,13 +21,36 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     iconName: "layout-dashboard",
-    phase: "Phase 1",
+  },
+  {
+    label: "Sales & Billing",
+    href: "/billing",
+    iconName: "shopping-cart",
+  },
+  {
+    label: "Purchases",
+    href: "/purchases",
+    iconName: "truck",
   },
   {
     label: "Inventory",
     href: "/inventory",
     iconName: "package",
-    phase: "Phase 2",
+  },
+  {
+    label: "Transactions",
+    href: "/transactions",
+    iconName: "arrow-left-right",
+  },
+  {
+    label: "Customers & Khata",
+    href: "/customers",
+    iconName: "users",
+  },
+  {
+    label: "Suppliers",
+    href: "/suppliers",
+    iconName: "building-2",
   },
   {
     label: "Documents",
@@ -39,18 +65,6 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
     phase: "Phase 4",
   },
   {
-    label: "Transactions",
-    href: "/transactions",
-    iconName: "arrow-left-right",
-    phase: "Phase 2",
-  },
-  {
-    label: "Customers & Khata",
-    href: "/customers",
-    iconName: "users",
-    phase: "Phase 2",
-  },
-  {
     label: "Reports",
     href: "/reports",
     iconName: "bar-chart-3",
@@ -60,7 +74,6 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
     label: "Settings",
     href: "/settings",
     iconName: "settings",
-    phase: "Phase 1+",
   },
 ];
 
