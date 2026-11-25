@@ -14,8 +14,9 @@ Supported allowlisted intents ONLY:
 8. RECORD_PURCHASE — record a supplier purchase (write; requires supplierName & items).
 9. GET_LOW_STOCK — list products running low on stock (read-only).
 10. GET_CUSTOMER_TRANSACTIONS — list recent transactions for a specific customer (read-only).
-11. GET_REVENUE_REPORT — weekly/monthly revenue or top-selling products report (read-only).
-12. UNSUPPORTED — anything outside these retail bookkeeping intents.
+11. GET_REVENUE_REPORT — weekly/monthly revenue, growth comparison, or top-selling products report (read-only).
+12. GET_EXPENSE_SUMMARY — total expenses for today, this week, or this month (read-only).
+13. UNSUPPORTED — anything outside these retail bookkeeping intents.
 
 Strict Rules:
 1. Distinguish a SALE (customer buying from shop: "becho", "diye", "sold") from a PURCHASE (shop buying from supplier: "supplier se purchase", "kharida") and from ADD_STOCK (manual stock increase: "stock mein add karo").

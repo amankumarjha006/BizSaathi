@@ -29,6 +29,8 @@ import {
   ValidationError,
 } from "@/server/utils/errors";
 import { analyticsService } from "./analytics.service";
+import { resolveAnalyticsDateRange } from "./analytics/date-range";
+import { expenseAnalyticsService } from "./analytics/expense-analytics.service";
 import { customerService } from "./customer.service";
 import { inventoryService } from "./inventory.service";
 import { ledgerService } from "./ledger.service";
@@ -491,16 +493,53 @@ async function executeReadOnlyDraft(
         THIS_MONTH: { EN: "This month's", HI: "इस महीने की", HINGLISH: "Is month ki" },
       }[period];
 
+      const growthNote =
+        summary.salesGrowthPct !== null && summary.previousNetSales > 0
+          ? summary.salesGrowthPct >= 0
+            ? ` (+${summary.salesGrowthPct}% vs previous period)`
+            : ` (${summary.salesGrowthPct}% vs previous period)`
+          : "";
+
       const summaryText = pickMessage(lang, {
-        EN: `${labelMap.EN} total sales: ₹${summary.totalSales} across ${summary.transactionCount} bill(s) (Collected: ₹${summary.totalCollected}, Udhaar: ₹${summary.totalCredit}).`,
-        HI: `${labelMap.HI} कुल बिक्री: ₹${summary.totalSales} (${summary.transactionCount} बिल, नकद/UPI प्राप्त: ₹${summary.totalCollected}, उधार: ₹${summary.totalCredit})।`,
-        HINGLISH: `${labelMap.HINGLISH} total sales ₹${summary.totalSales} hui hain (${summary.transactionCount} bills, collected: ₹${summary.totalCollected}, udhaar: ₹${summary.totalCredit}).`,
+        EN: `${labelMap.EN} total sales: ₹${summary.totalSales} across ${summary.transactionCount} bill(s) (Collected: ₹${summary.totalCollected}, Udhaar: ₹${summary.totalCredit})${growthNote}.`,
+        HI: `${labelMap.HI} कुल बिक्री: ₹${summary.totalSales} (${summary.transactionCount} बिल, नकद/UPI प्राप्त: ₹${summary.totalCollected}, उधार: ₹${summary.totalCredit})${growthNote}।`,
+        HINGLISH: `${labelMap.HINGLISH} total sales ₹${summary.totalSales} hui hain (${summary.transactionCount} bills, collected: ₹${summary.totalCollected}, udhaar: ₹${summary.totalCredit})${growthNote}.`,
       });
       return {
         summaryText,
         updatedDraft: {
           ...draft,
           calculatedTotal: summary.totalSales,
+          assistantMessage: summaryText,
+        },
+      };
+    }
+
+    case "GET_EXPENSE_SUMMARY": {
+      const period = draft.datePeriod ?? "THIS_MONTH";
+      const presetMap = {
+        TODAY: "TODAY",
+        YESTERDAY: "YESTERDAY",
+        THIS_WEEK: "LAST_7_DAYS",
+        THIS_MONTH: "THIS_MONTH",
+      } as const;
+      const range = resolveAnalyticsDateRange({ preset: presetMap[period] });
+      const expenses = await expenseAnalyticsService.getExpenseAnalytics(
+        businessId,
+        range,
+        {},
+        prisma
+      );
+      const summaryText = pickMessage(lang, {
+        EN: `Total expenses for ${range.label.toLowerCase()}: ₹${expenses.summary.totalExpenses} across ${expenses.summary.transactionCount} record(s).`,
+        HI: `${range.label} में कुल खर्च: ₹${expenses.summary.totalExpenses} (${expenses.summary.transactionCount} एंट्री)।`,
+        HINGLISH: `${range.label} mein total expense ₹${expenses.summary.totalExpenses} hua hai (${expenses.summary.transactionCount} entries).`,
+      });
+      return {
+        summaryText,
+        updatedDraft: {
+          ...draft,
+          calculatedTotal: expenses.summary.totalExpenses,
           assistantMessage: summaryText,
         },
       };

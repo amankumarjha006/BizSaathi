@@ -1,0 +1,23 @@
+import type { NextRequest } from "next/server";
+import { paymentAnalyticsService } from "@/server/services/analytics/payment-analytics.service";
+import { parseAnalyticsQuery } from "@/server/utils/analytics-query";
+import { handleApiError, jsonOk } from "@/server/utils/api-response";
+import { resolveBusinessId } from "@/server/utils/business-context";
+
+export async function GET(req: NextRequest) {
+  try {
+    const businessId = resolveBusinessId();
+    const { query, range } = parseAnalyticsQuery(req);
+    const data = await paymentAnalyticsService.getPaymentAnalytics(
+      businessId,
+      range,
+      {
+        paymentMethod: query.paymentMethod,
+        direction: query.direction,
+      }
+    );
+    return jsonOk(data);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

@@ -16,6 +16,7 @@ export const voiceIntentSchema = z.enum([
   "GET_LOW_STOCK",
   "GET_CUSTOMER_TRANSACTIONS",
   "GET_REVENUE_REPORT",
+  "GET_EXPENSE_SUMMARY",
   "UNSUPPORTED",
 ]);
 
@@ -26,6 +27,7 @@ export const READ_ONLY_INTENTS = new Set<z.infer<typeof voiceIntentSchema>>([
   "GET_LOW_STOCK",
   "GET_CUSTOMER_TRANSACTIONS",
   "GET_REVENUE_REPORT",
+  "GET_EXPENSE_SUMMARY",
 ]);
 
 export const voiceDatePeriodSchema = z.enum([

@@ -206,11 +206,23 @@ function createPhase4InMemoryMock() {
         return transactions.filter((t) => {
           if (where.businessId && t.businessId !== where.businessId) return false;
           if (where.customerId && t.customerId !== where.customerId) return false;
-          if (where.transactionType && t.transactionType !== where.transactionType) return false;
+          if (where.transactionType) {
+            if (typeof where.transactionType === "string" && t.transactionType !== where.transactionType) return false;
+            if (typeof where.transactionType === "object" && "in" in where.transactionType) {
+              const list = (where.transactionType as { in: string[] }).in;
+              if (!list.includes(String(t.transactionType))) return false;
+            }
+          }
           if (where.status && t.status !== where.status) return false;
           if (where.paymentStatus && typeof where.paymentStatus === "object" && "in" in where.paymentStatus) {
             const list = (where.paymentStatus as { in: string[] }).in;
             if (!list.includes(String(t.paymentStatus))) return false;
+          }
+          if (where.transactionDate && typeof where.transactionDate === "object") {
+            const dr = where.transactionDate as { gte?: Date; lte?: Date };
+            const td = t.transactionDate as Date;
+            if (dr.gte && td < dr.gte) return false;
+            if (dr.lte && td > dr.lte) return false;
           }
           return true;
         });
@@ -248,6 +260,18 @@ function createPhase4InMemoryMock() {
         const created = { id: nextId("pay"), ...data, createdAt: new Date() };
         payments.push(created);
         return created;
+      }),
+      findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
+        return payments.filter((p) => {
+          if (where.businessId && p.businessId !== where.businessId) return false;
+          if (where.createdAt && typeof where.createdAt === "object") {
+            const dr = where.createdAt as { gte?: Date; lte?: Date };
+            const dt = p.createdAt as Date;
+            if (dr.gte && dt < dr.gte) return false;
+            if (dr.lte && dt > dr.lte) return false;
+          }
+          return true;
+        });
       }),
     },
     ledgerEntry: {
